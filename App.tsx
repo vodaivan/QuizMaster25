@@ -6,9 +6,10 @@ import InputView from './components/InputView';
 import ReviewView from './components/ReviewView';
 import GuideView from './components/GuideView';
 import HistoryView from './components/HistoryView';
+import SearchView from './components/SearchView';
 import ResultsModal from './components/ResultsModal';
 import Timer from './components/Timer';
-import { LayoutList, Shuffle, Edit3, BookOpen, HelpCircle, History, Eye, EyeOff, Send, RotateCcw, Settings, X, Type, Columns } from 'lucide-react';
+import { LayoutList, Shuffle, Edit3, BookOpen, HelpCircle, History, Eye, EyeOff, Send, RotateCcw, Settings, X, Type, Columns, Search } from 'lucide-react';
 
 const QuizAppContent: React.FC = () => {
   const [showResults, setShowResults] = React.useState(false);
@@ -60,6 +61,7 @@ const QuizAppContent: React.FC = () => {
     { id: 'normal', label: 'Normal Quiz', icon: LayoutList },
     { id: 'random', label: 'Randomized', icon: Shuffle },
     { id: 'review', label: 'Review & Notes', icon: BookOpen },
+    { id: 'search', label: 'Search', icon: Search },
     { id: 'history', label: 'History', icon: History },
   ];
 
@@ -304,6 +306,7 @@ const QuizAppContent: React.FC = () => {
         {activeMode === 'normal' && <QuizView mode="normal" />}
         {activeMode === 'random' && <QuizView mode="random" />}
         {activeMode === 'review' && <ReviewView />}
+        {activeMode === 'search' && <SearchView />}
         {activeMode === 'history' && <HistoryView />}
       </main>
 

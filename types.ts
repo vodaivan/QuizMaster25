@@ -11,7 +11,7 @@ export interface Question {
   section: number; // 1, 2, 3, 4
 }
 
-export type QuizMode = 'normal' | 'random' | 'input' | 'review' | 'guide' | 'history';
+export type QuizMode = 'normal' | 'random' | 'input' | 'review' | 'guide' | 'history' | 'search';
 
 export interface HistoryEntry {
   timestamp: string;
@@ -77,6 +77,10 @@ export interface QuizState {
   
   // App Settings
   settings: AppSettings;
+
+  // Review & Search Features
+  pinnedQuestions: number[];
+  dismissedReviewIds: number[];
 }
 
 export const SECTIONS = [1, 2, 3, 4];
