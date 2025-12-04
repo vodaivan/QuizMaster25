@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { QuizProvider, useQuiz } from './context/QuizContext';
-import { QuizMode } from './types';
+import { QuizMode, FontFamily, FontSize } from './types';
 import QuizView from './components/QuizView';
 import InputView from './components/InputView';
 import ReviewView from './components/ReviewView';
@@ -39,6 +39,21 @@ const QuizAppContent: React.FC = () => {
     };
   }, [showSettings]);
 
+  // Apply Font Size Effect Globally (using root font size)
+  useEffect(() => {
+      const root = document.documentElement;
+      let sizeValue = '16px'; // Medium default
+
+      switch(settings.fontSize) {
+          case 'small': sizeValue = '14px'; break;
+          case 'medium': sizeValue = '16px'; break;
+          case 'large': sizeValue = '18px'; break;
+          case 'xlarge': sizeValue = '20px'; break;
+      }
+      
+      root.style.fontSize = sizeValue;
+  }, [settings.fontSize]);
+
   const tabs = [
     { id: 'guide', label: 'Guide', icon: HelpCircle },
     { id: 'input', label: 'Input Data', icon: Edit3 },
@@ -50,21 +65,28 @@ const QuizAppContent: React.FC = () => {
 
   const showQuizControls = (activeMode === 'normal' || activeMode === 'random') && questions.length > 0;
 
-  // Global Styles based on Settings
-  const fontClass = {
-      sans: 'font-sans',
-      serif: 'font-serif',
-      mono: 'font-mono'
-  }[settings.fontFamily];
-
-  const sizeClass = {
-      small: 'text-sm',
-      medium: 'text-base',
-      large: 'text-lg'
-  }[settings.fontSize];
+  // Map settings to CSS font families
+  const getFontFamily = (f: FontFamily) => {
+      switch(f) {
+          case 'Default': return 'ui-sans-serif, system-ui, sans-serif';
+          case 'Sans-serif': return 'sans-serif';
+          case 'Serif': return 'serif';
+          case 'Monospace': return 'monospace';
+          case 'Roboto': return '"Roboto", sans-serif';
+          case 'Open Sans': return '"Open Sans", sans-serif';
+          case 'Lato': return '"Lato", sans-serif';
+          case 'Montserrat': return '"Montserrat", sans-serif';
+          case 'Georgia': return 'Georgia, serif';
+          case 'Courier New': return '"Courier New", monospace';
+          default: return 'inherit';
+      }
+  };
 
   return (
-    <div className={`min-h-screen flex flex-col bg-gray-50 ${fontClass} ${sizeClass}`}>
+    <div 
+        className="min-h-screen flex flex-col bg-gray-50 text-gray-800 transition-all duration-200"
+        style={{ fontFamily: getFontFamily(settings.fontFamily) }}
+    >
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between relative">
@@ -149,29 +171,37 @@ const QuizAppContent: React.FC = () => {
 
              {/* Settings Panel */}
              {showSettings && (
-                 <div className="absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-xl border border-gray-200 p-4 animate-in slide-in-from-top-2">
+                 <div className="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-xl border border-gray-200 p-4 animate-in slide-in-from-top-2 max-h-[80vh] overflow-y-auto">
                      <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
                          <h3 className="font-bold text-gray-800 flex items-center gap-2">
                              <Settings size={16} /> Appearance
                          </h3>
+                         <button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-gray-600">
+                             <X size={16} />
+                         </button>
                      </div>
 
-                     <div className="space-y-4">
+                     <div className="space-y-5">
                          {/* Font Family */}
                          <div>
                              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block flex items-center gap-1">
                                 <Type size={12} /> Font Style
                              </label>
-                             <div className="grid grid-cols-3 gap-2">
-                                 {['sans', 'serif', 'mono'].map((f) => (
+                             <div className="grid grid-cols-2 gap-2">
+                                 {[
+                                     'Default', 'Sans-serif', 'Serif', 'Monospace', 
+                                     'Roboto', 'Open Sans', 'Lato', 'Montserrat', 
+                                     'Georgia', 'Courier New'
+                                 ].map((f) => (
                                      <button
                                         key={f}
-                                        onClick={() => updateSettings({ fontFamily: f as any })}
-                                        className={`px-2 py-1.5 text-xs rounded border capitalize transition-colors ${
+                                        onClick={() => updateSettings({ fontFamily: f as FontFamily })}
+                                        className={`px-3 py-2 text-xs rounded border transition-colors text-left truncate ${
                                             settings.fontFamily === f 
                                             ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold' 
                                             : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                                         }`}
+                                        style={{ fontFamily: getFontFamily(f as FontFamily) }}
                                      >
                                          {f}
                                      </button>
@@ -184,18 +214,20 @@ const QuizAppContent: React.FC = () => {
                              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">
                                 Font Size
                              </label>
-                             <div className="grid grid-cols-3 gap-2">
-                                 {['small', 'medium', 'large'].map((s) => (
+                             <div className="grid grid-cols-4 gap-2">
+                                 {['small', 'medium', 'large', 'xlarge'].map((s) => (
                                      <button
                                         key={s}
-                                        onClick={() => updateSettings({ fontSize: s as any })}
-                                        className={`px-2 py-1.5 text-xs rounded border capitalize transition-colors ${
+                                        onClick={() => updateSettings({ fontSize: s as FontSize })}
+                                        className={`px-1 py-1.5 text-xs rounded border capitalize transition-colors ${
                                             settings.fontSize === s 
                                             ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold' 
                                             : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                                         }`}
                                      >
-                                         {s}
+                                         <span className={s === 'small' ? 'text-xs' : s === 'medium' ? 'text-sm' : s === 'large' ? 'text-base' : 'text-lg'}>
+                                             {s === 'small' ? 'Sm' : s === 'medium' ? 'Md' : s === 'large' ? 'Lg' : 'XL'}
+                                         </span>
                                      </button>
                                  ))}
                              </div>
@@ -206,30 +238,30 @@ const QuizAppContent: React.FC = () => {
                              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block flex items-center gap-1">
                                 <Columns size={12} /> Quiz Layout
                              </label>
-                             <p className="text-[10px] text-gray-400 mb-2">Applies to Normal & Random tabs only.</p>
+                             <p className="text-[10px] text-gray-400 mb-2">Applies to Normal & Random tabs.</p>
                              <div className="grid grid-cols-2 gap-2">
                                  <button
                                     onClick={() => updateSettings({ layout: 'single' })}
-                                    className={`px-2 py-2 text-xs rounded border transition-colors flex flex-col items-center gap-1 ${
+                                    className={`px-2 py-3 text-xs rounded border transition-colors flex flex-col items-center gap-2 ${
                                         settings.layout === 'single'
                                         ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold'
                                         : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                                     }`}
                                  >
-                                     <div className="w-4 h-4 border border-current rounded-sm"></div>
+                                     <div className="w-6 h-8 border-2 border-current rounded-sm bg-current/10"></div>
                                      One Column
                                  </button>
                                  <button
                                     onClick={() => updateSettings({ layout: 'double' })}
-                                    className={`px-2 py-2 text-xs rounded border transition-colors flex flex-col items-center gap-1 ${
+                                    className={`px-2 py-3 text-xs rounded border transition-colors flex flex-col items-center gap-2 ${
                                         settings.layout === 'double'
                                         ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold'
                                         : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                                     }`}
                                  >
-                                     <div className="flex gap-0.5">
-                                        <div className="w-2 h-4 border border-current rounded-sm"></div>
-                                        <div className="w-2 h-4 border border-current rounded-sm"></div>
+                                     <div className="flex gap-1">
+                                        <div className="w-3 h-8 border-2 border-current rounded-sm bg-current/10"></div>
+                                        <div className="w-3 h-8 border-2 border-current rounded-sm bg-current/10"></div>
                                      </div>
                                      Two Columns
                                  </button>

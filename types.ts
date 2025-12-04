@@ -21,8 +21,19 @@ export interface HistoryEntry {
 }
 
 // Settings Types
-export type FontFamily = 'sans' | 'serif' | 'mono';
-export type FontSize = 'small' | 'medium' | 'large';
+export type FontFamily = 
+  | 'Default' 
+  | 'Sans-serif' 
+  | 'Serif' 
+  | 'Monospace' 
+  | 'Roboto' 
+  | 'Open Sans' 
+  | 'Lato' 
+  | 'Montserrat' 
+  | 'Georgia' 
+  | 'Courier New';
+
+export type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
 export type ColumnLayout = 'single' | 'double';
 
 export interface AppSettings {

@@ -43,7 +43,7 @@ const initialModeState: QuizModeState = {
 };
 
 const defaultSettings: AppSettings = {
-  fontFamily: 'sans',
+  fontFamily: 'Default',
   fontSize: 'medium',
   layout: 'single',
 };
