@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Question, QuizState, QuizMode, QuizModeState, HistoryEntry } from '../types';
+import { Question, QuizState, QuizMode, QuizModeState, HistoryEntry, QUESTIONS_PER_PAGE, QUESTIONS_PER_SECTION } from '../types';
 
 interface QuizContextType extends QuizState {
   setQuestions: (questions: Question[]) => void;
@@ -13,6 +13,11 @@ interface QuizContextType extends QuizState {
   randomizeQuestions: () => void;
   setActiveMode: (mode: QuizMode) => void;
   clearHistory: () => void;
+
+  // Navigation Setters
+  setCurrentSection: (section: number) => void;
+  setCurrentPage: (page: number) => void;
+  togglePageCheck: (force?: boolean) => void;
 }
 
 const QuizContext = createContext<QuizContextType | undefined>(undefined);
@@ -28,6 +33,9 @@ const initialModeState: QuizModeState = {
   timeRemaining: null,
   initialDuration: null,
   isTimerPaused: false,
+  currentSection: 1,
+  currentPage: 1,
+  isPageChecked: false,
 };
 
 export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -92,6 +100,24 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveModeState(mode);
   }, []);
 
+  // Navigation Logic
+  const setCurrentSection = useCallback((section: number) => {
+    // Reset page to 1 and uncheck page when switching section
+    updateActiveState({ currentSection: section, currentPage: 1, isPageChecked: false });
+  }, [activeMode]);
+
+  const setCurrentPage = useCallback((page: number) => {
+    // Uncheck page when switching page
+    updateActiveState({ currentPage: page, isPageChecked: false });
+  }, [activeMode]);
+
+  const togglePageCheck = useCallback((force?: boolean) => {
+    updateActiveState(prev => ({ 
+        isPageChecked: force !== undefined ? force : !prev.isPageChecked 
+    }));
+  }, [activeMode]);
+
+
   const randomizeQuestions = useCallback(() => {
     setShuffledOrder(prev => [...prev].sort(() => Math.random() - 0.5));
     // Only reset random state
@@ -147,7 +173,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Save History
     const durationSpent = currentState.initialDuration && currentState.timeRemaining !== null 
         ? currentState.initialDuration - currentState.timeRemaining 
-        : 0; // If no timer used, strictly speaking duration is unknown or 0 with current logic
+        : 0;
 
     const newHistoryEntry: HistoryEntry = {
         timestamp: new Date().toLocaleString(),
@@ -165,7 +191,8 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Mark as submitted and freeze timer
     updateActiveState({
       isSubmitted: true,
-      isTimerPaused: true // Freeze the timer
+      isTimerPaused: true,
+      isPageChecked: false // Turn off quick check highlights as global submit overrides them
     });
 
   }, [questions, currentState, wrongCounts, activeMode]);
@@ -178,14 +205,12 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [activeMode]);
 
   const setTimer = useCallback((seconds: number) => {
-    // Setting timer also essentially resets the session for that mode
     updateActiveState({
         ...initialModeState,
         timeRemaining: seconds,
         initialDuration: seconds,
         isTimerPaused: false
     });
-    // Also reset score for this mode
     if (activeMode === 'normal' || activeMode === 'random') {
         setLastScores(prev => ({ ...prev, [activeMode]: null }));
     }
@@ -202,7 +227,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     updateActiveState(prev => {
         if (prev.timeRemaining === null) return {};
-        if (prev.isTimerPaused || prev.isSubmitted) return {}; // Do not tick if paused or submitted
+        if (prev.isTimerPaused || prev.isSubmitted) return {};
 
         if (prev.timeRemaining <= 1) {
             return { timeRemaining: 0 };
@@ -242,6 +267,9 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       timeRemaining: currentState.timeRemaining,
       initialDuration: currentState.initialDuration,
       isTimerPaused: currentState.isTimerPaused,
+      currentSection: currentState.currentSection,
+      currentPage: currentState.currentPage,
+      isPageChecked: currentState.isPageChecked,
 
       setQuestions,
       setAnswer,
@@ -253,7 +281,10 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       tickTimer,
       randomizeQuestions,
       setActiveMode,
-      clearHistory
+      clearHistory,
+      setCurrentSection,
+      setCurrentPage,
+      togglePageCheck
     }}>
       {children}
     </QuizContext.Provider>

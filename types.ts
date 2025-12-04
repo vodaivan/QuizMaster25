@@ -26,6 +26,11 @@ export interface QuizModeState {
   timeRemaining: number | null;
   initialDuration: number | null; // To calculate time spent
   isTimerPaused: boolean;
+  
+  // Navigation State
+  currentSection: number;
+  currentPage: number;
+  isPageChecked: boolean; // Moved to global state
 }
 
 export interface QuizState {
@@ -37,6 +42,10 @@ export interface QuizState {
   initialDuration: number | null;
   isTimerPaused: boolean;
   
+  currentSection: number;
+  currentPage: number;
+  isPageChecked: boolean;
+
   notes: Record<number, string>;
   wrongCounts: Record<number, number>;
   shuffledOrder: number[]; 

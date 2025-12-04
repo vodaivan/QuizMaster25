@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useQuiz } from '../context/QuizContext';
 import QuestionCard from './QuestionCard';
 import { SECTIONS, QUESTIONS_PER_SECTION, QUESTIONS_PER_PAGE } from '../types';
@@ -9,21 +9,20 @@ interface Props {
 }
 
 const QuizView: React.FC<Props> = ({ mode }) => {
-  const { questions, shuffledOrder, randomizeQuestions, isSubmitted, userAnswers, submitQuiz } = useQuiz();
-  const [activeSection, setActiveSection] = useState(1);
-  const [activePage, setActivePage] = useState(1); // 1-5
-  const [isPageChecked, setIsPageChecked] = useState(false); // Local state for Quick Check
-
-  // Reset page and check state when switching sections
-  useEffect(() => {
-    setActivePage(1);
-    setIsPageChecked(false);
-  }, [activeSection]);
-
-  // Reset check state when changing pages
-  useEffect(() => {
-    setIsPageChecked(false);
-  }, [activePage]);
+  const { 
+      questions, 
+      shuffledOrder, 
+      randomizeQuestions, 
+      isSubmitted, 
+      userAnswers, 
+      submitQuiz,
+      currentSection,
+      currentPage,
+      setCurrentSection,
+      setCurrentPage,
+      isPageChecked,
+      togglePageCheck
+  } = useQuiz();
 
   // Keyboard shortcut for Quick Check (/)
   useEffect(() => {
@@ -31,14 +30,14 @@ const QuizView: React.FC<Props> = ({ mode }) => {
         if (e.key === '/') {
             e.preventDefault(); // Prevent input in other fields if any
             if (!isSubmitted) {
-                setIsPageChecked(prev => !prev);
+                togglePageCheck();
             }
         }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isSubmitted]);
+  }, [isSubmitted, togglePageCheck]);
 
   const handleSubmit = () => {
     // Immediate submit without confirmation
@@ -56,7 +55,7 @@ const QuizView: React.FC<Props> = ({ mode }) => {
 
   // Determine which questions to show
   const getQuestionsForCurrentView = () => {
-    const startIndex = (activeSection - 1) * QUESTIONS_PER_SECTION;
+    const startIndex = (currentSection - 1) * QUESTIONS_PER_SECTION;
     const endIndex = startIndex + QUESTIONS_PER_SECTION;
     
     let sectionQuestionIds: number[] = [];
@@ -64,7 +63,7 @@ const QuizView: React.FC<Props> = ({ mode }) => {
     if (mode === 'normal') {
       // Filter questions belonging to this section (assuming they are sorted)
       sectionQuestionIds = questions
-        .filter(q => q.section === activeSection)
+        .filter(q => q.section === currentSection)
         .map(q => q.id);
     } else {
       // Take slice from shuffled order
@@ -72,7 +71,7 @@ const QuizView: React.FC<Props> = ({ mode }) => {
     }
 
     // Now paginate within the section
-    const pageStartIndex = (activePage - 1) * QUESTIONS_PER_PAGE;
+    const pageStartIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
     const pageEndIndex = pageStartIndex + QUESTIONS_PER_PAGE;
     const pageIds = sectionQuestionIds.slice(pageStartIndex, pageEndIndex);
 
@@ -99,9 +98,9 @@ const QuizView: React.FC<Props> = ({ mode }) => {
             {SECTIONS.map(sec => (
               <button
                 key={sec}
-                onClick={() => setActiveSection(sec)}
+                onClick={() => setCurrentSection(sec)}
                 className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeSection === sec
+                  currentSection === sec
                     ? 'bg-blue-600 text-white shadow-md'
                     : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                 }`}
@@ -114,8 +113,8 @@ const QuizView: React.FC<Props> = ({ mode }) => {
           {/* Pagination */}
           <div className="flex justify-center items-center space-x-2">
             <button 
-                disabled={activePage === 1}
-                onClick={() => setActivePage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 className="p-2 rounded-md hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed bg-white border border-gray-200"
             >
                 <ArrowLeft size={18} />
@@ -123,9 +122,9 @@ const QuizView: React.FC<Props> = ({ mode }) => {
             {[1, 2, 3, 4, 5].map(p => (
                 <button
                     key={p}
-                    onClick={() => setActivePage(p)}
+                    onClick={() => setCurrentPage(p)}
                     className={`w-8 h-8 rounded-md text-sm font-bold transition-all ${
-                        activePage === p 
+                        currentPage === p 
                         ? 'bg-gray-800 text-white' 
                         : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-100'
                     }`}
@@ -134,14 +133,58 @@ const QuizView: React.FC<Props> = ({ mode }) => {
                 </button>
             ))}
              <button 
-                disabled={activePage === 5}
-                onClick={() => setActivePage(p => Math.min(5, p + 1))}
+                disabled={currentPage === 5}
+                onClick={() => setCurrentPage(Math.min(5, currentPage + 1))}
                 className="p-2 rounded-md hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed bg-white border border-gray-200"
             >
                 <ArrowRight size={18} />
             </button>
         </div>
       </div>
+  );
+
+  const ActionButtons = () => (
+    <div className="flex items-center gap-3">
+        {!isSubmitted ? (
+            <>
+                {/* Quick Check Button */}
+                {!isPageChecked ? (
+                    <button
+                        onClick={() => togglePageCheck(true)}
+                        className="flex items-center gap-2 text-sm text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-md transition-colors font-medium border border-indigo-200"
+                        title="Shortcut: /"
+                    >
+                        <Eye size={16} /> Quick Check
+                    </button>
+                ) : (
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => togglePageCheck(false)}
+                            className="flex items-center gap-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-md transition-colors font-medium border border-gray-300"
+                            title="Shortcut: /"
+                        >
+                            <EyeOff size={16} /> Hide Answers
+                        </button>
+                        <span className="text-sm font-bold text-indigo-700 bg-indigo-50 px-3 py-2 rounded border border-indigo-100">
+                            Page Score: {calculatePageScore()} / 10
+                        </span>
+                    </div>
+                )}
+                
+                {/* Local Submit Button */}
+                    <button
+                    onClick={handleSubmit}
+                    className="flex items-center gap-2 text-sm text-white bg-green-600 hover:bg-green-700 px-3 py-2 rounded-md transition-colors font-medium shadow-sm"
+                >
+                    <Send size={16} /> Submit
+                </button>
+            </>
+        ) : (
+            <div className="text-green-700 font-bold bg-green-50 px-3 py-2 rounded border border-green-200 text-sm">
+                Quiz Submitted
+            </div>
+        )}
+    </div>
   );
 
   return (
@@ -152,55 +195,14 @@ const QuizView: React.FC<Props> = ({ mode }) => {
         
         {/* Additional Tools Bar */}
         <div className="flex flex-wrap justify-between items-center gap-3 mt-4 px-1">
-             <div className="flex items-center gap-3">
-                {!isSubmitted ? (
-                    <>
-                        {/* Quick Check Button */}
-                        {!isPageChecked ? (
-                            <button
-                                onClick={() => setIsPageChecked(true)}
-                                className="flex items-center gap-2 text-sm text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-md transition-colors font-medium border border-indigo-200"
-                                title="Shortcut: /"
-                            >
-                                <Eye size={16} /> Quick Check
-                            </button>
-                        ) : (
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => setIsPageChecked(false)}
-                                    className="flex items-center gap-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-md transition-colors font-medium border border-gray-300"
-                                    title="Shortcut: /"
-                                >
-                                    <EyeOff size={16} /> Hide Answers
-                                </button>
-                                <span className="text-sm font-bold text-indigo-700 bg-indigo-50 px-3 py-2 rounded border border-indigo-100">
-                                    Page Score: {calculatePageScore()} / 10
-                                </span>
-                            </div>
-                        )}
-                        
-                        {/* Local Submit Button */}
-                         <button
-                            onClick={handleSubmit}
-                            className="flex items-center gap-2 text-sm text-white bg-green-600 hover:bg-green-700 px-3 py-2 rounded-md transition-colors font-medium shadow-sm"
-                        >
-                            <Send size={16} /> Submit
-                        </button>
-                    </>
-                ) : (
-                    <div className="text-green-700 font-bold bg-green-50 px-3 py-2 rounded border border-green-200 text-sm">
-                        Quiz Submitted
-                    </div>
-                )}
-             </div>
+             <ActionButtons />
 
              {mode === 'random' && !isSubmitted && (
                 <button
                 onClick={() => {
                     randomizeQuestions();
-                    setActiveSection(1);
-                    setActivePage(1);
-                    setIsPageChecked(false);
+                    setCurrentSection(1);
+                    setCurrentPage(1);
                 }}
                 className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-2 rounded-md transition-colors"
                 >
@@ -215,7 +217,7 @@ const QuizView: React.FC<Props> = ({ mode }) => {
         {currentQuestions.map((q, idx) => {
             // Calculate global index for display
             // Section offset + Page offset + index + 1
-            const globalIndex = ((activeSection - 1) * 50) + ((activePage - 1) * 10) + idx + 1;
+            const globalIndex = ((currentSection - 1) * 50) + ((currentPage - 1) * 10) + idx + 1;
             return (
                 <QuestionCard 
                     key={q.id} 
@@ -229,8 +231,11 @@ const QuizView: React.FC<Props> = ({ mode }) => {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
+      <div className="mt-8 pt-6 border-t border-gray-200 space-y-4">
         <NavigationControls />
+        <div className="flex justify-end">
+            <ActionButtons />
+        </div>
       </div>
     </div>
   );
