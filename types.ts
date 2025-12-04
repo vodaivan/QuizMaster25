@@ -11,12 +11,20 @@ export interface Question {
   section: number; // 1, 2, 3, 4
 }
 
-export type QuizMode = 'normal' | 'random' | 'input' | 'review' | 'guide';
+export type QuizMode = 'normal' | 'random' | 'input' | 'review' | 'guide' | 'history';
+
+export interface HistoryEntry {
+  timestamp: string;
+  mode: 'Normal' | 'Random';
+  score: number;
+  duration: number; // seconds spent
+}
 
 export interface QuizModeState {
   userAnswers: Record<number, string>;
   isSubmitted: boolean;
   timeRemaining: number | null;
+  initialDuration: number | null; // To calculate time spent
   isTimerPaused: boolean;
 }
 
@@ -26,6 +34,7 @@ export interface QuizState {
   userAnswers: Record<number, string>; 
   isSubmitted: boolean;
   timeRemaining: number | null; 
+  initialDuration: number | null;
   isTimerPaused: boolean;
   
   notes: Record<number, string>;
@@ -33,6 +42,7 @@ export interface QuizState {
   shuffledOrder: number[]; 
   activeMode: QuizMode;
   lastScores: { normal: number | null; random: number | null };
+  history: HistoryEntry[];
 }
 
 export const SECTIONS = [1, 2, 3, 4];

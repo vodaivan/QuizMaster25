@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuiz } from '../context/QuizContext';
 import { SECTIONS, QUESTIONS_PER_SECTION } from '../types';
-import { BookOpen, AlertCircle, Save } from 'lucide-react';
+import { BookOpen, AlertCircle, Save, Download } from 'lucide-react';
 
 const ReviewView: React.FC = () => {
   const { questions, userAnswers, notes, setNote, wrongCounts, isSubmitted } = useQuiz();
@@ -17,10 +17,9 @@ const ReviewView: React.FC = () => {
     const isHistoricallyWrong = (wrongCounts[q.id] || 0) > 0;
     
     // Condition 2: Current session wrong
-    // Requirement: "Only results from the final submission... Do NOT include questions with no answer selected."
     const isCurrentWrong = isSubmitted && 
-                           userAnswers[q.id] !== undefined && // Must have an answer
-                           userAnswers[q.id] !== q.correctOptionId; // Must be wrong
+                           userAnswers[q.id] !== undefined && 
+                           userAnswers[q.id] !== q.correctOptionId;
 
     // Condition 3: Has note
     const hasNote = !!notes[q.id];
@@ -38,18 +37,65 @@ const ReviewView: React.FC = () => {
     }
   };
 
+  const exportNotesToTxt = () => {
+      // Collect ALL relevant data (not just current section)
+      const allReviewItems = questions.filter(q => !!notes[q.id] || (userAnswers[q.id] !== undefined && userAnswers[q.id] !== q.correctOptionId));
+      
+      if (allReviewItems.length === 0) {
+          alert("No notes or wrong answers to export.");
+          return;
+      }
+
+      let content = "QUIZ REVIEW & NOTES\n";
+      content += `Date: ${new Date().toLocaleString()}\n`;
+      content += "====================================\n\n";
+
+      allReviewItems.forEach(q => {
+          content += `Question ${q.id}: ${q.text}\n`;
+          content += `Correct Answer: ${q.correctOptionId}\n`;
+          
+          if (userAnswers[q.id] && userAnswers[q.id] !== q.correctOptionId) {
+              content += `Your Last Answer: ${userAnswers[q.id]} (WRONG)\n`;
+          }
+          
+          if (notes[q.id]) {
+              content += `Your Note: ${notes[q.id]}\n`;
+          }
+          content += "\n------------------------------------\n\n";
+      });
+
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateStr = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+      a.download = `review_notes_${dateStr}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+  };
+
   if (questions.length === 0) return <div className="text-center py-10">No questions loaded.</div>;
 
   return (
     <div className="max-w-4xl mx-auto pb-20">
-      <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-6 flex items-start gap-3">
-        <AlertCircle className="text-amber-600 mt-1 flex-shrink-0" />
-        <div>
-          <h3 className="font-bold text-amber-800">Review Mode</h3>
-          <p className="text-sm text-amber-700">
-            Showing questions from Section {activeSection} that you have answered incorrectly (and selected an answer for) or have attached notes to.
-          </p>
+      <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-6 flex justify-between items-center gap-3">
+        <div className="flex items-start gap-3">
+            <AlertCircle className="text-amber-600 mt-1 flex-shrink-0" />
+            <div>
+            <h3 className="font-bold text-amber-800">Review Mode</h3>
+            <p className="text-sm text-amber-700">
+                Review incorrect answers and your personal notes.
+            </p>
+            </div>
         </div>
+        <button 
+            onClick={exportNotesToTxt}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-sm text-sm font-medium"
+        >
+            <Download size={16} /> Save Notes to TXT
+        </button>
       </div>
 
       <div className="flex space-x-2 overflow-x-auto mb-6 pb-2 scrollbar-hide">
@@ -72,7 +118,6 @@ const ReviewView: React.FC = () => {
         <div className="text-center py-20 bg-white rounded-xl border border-gray-200 border-dashed">
           <BookOpen className="mx-auto text-gray-300 mb-2" size={48} />
           <p className="text-gray-500">No review items for this section.</p>
-          <p className="text-sm text-gray-400">Either you haven't submitted wrong answers yet, or you haven't taken notes.</p>
         </div>
       ) : (
         <div className="space-y-6">

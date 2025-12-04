@@ -9,8 +9,6 @@ const Timer: React.FC = () => {
   useEffect(() => {
     let interval: any;
     // Tick if time exists, is greater than 0, not submitted, and not paused.
-    // Note: QuizContext 'tickTimer' handles the pause/submit checks internally too,
-    // but we check here to avoid unnecessary intervals.
     if (timeRemaining !== null && timeRemaining > 0 && !isSubmitted && !isTimerPaused) {
       interval = setInterval(() => {
         tickTimer();
@@ -31,9 +29,8 @@ const Timer: React.FC = () => {
   };
 
   const handleReset = () => {
-    if (window.confirm("Are you sure you want to reset this quiz? All progress for this mode will be lost.")) {
-      resetQuiz();
-    }
+    // Immediate reset without confirmation
+    resetQuiz();
   };
 
   const timeOptions = [10, 15, 20, 25, 30, 45, 60];

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Question, QuizState, QuizMode, QuizModeState } from '../types';
+import { Question, QuizState, QuizMode, QuizModeState, HistoryEntry } from '../types';
 
 interface QuizContextType extends QuizState {
   setQuestions: (questions: Question[]) => void;
@@ -12,6 +12,7 @@ interface QuizContextType extends QuizState {
   tickTimer: () => void;
   randomizeQuestions: () => void;
   setActiveMode: (mode: QuizMode) => void;
+  clearHistory: () => void;
 }
 
 const QuizContext = createContext<QuizContextType | undefined>(undefined);
@@ -19,11 +20,13 @@ const QuizContext = createContext<QuizContextType | undefined>(undefined);
 const LOCAL_STORAGE_KEY_NOTES = 'quiz_notes';
 const LOCAL_STORAGE_KEY_WRONG = 'quiz_wrong_counts';
 const LOCAL_STORAGE_KEY_DATA = 'quiz_data';
+const LOCAL_STORAGE_KEY_HISTORY = 'quiz_history';
 
 const initialModeState: QuizModeState = {
   userAnswers: {},
   isSubmitted: false,
   timeRemaining: null,
+  initialDuration: null,
   isTimerPaused: false,
 };
 
@@ -39,15 +42,18 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [shuffledOrder, setShuffledOrder] = useState<number[]>([]);
   const [activeMode, setActiveModeState] = useState<QuizMode>('guide');
   const [lastScores, setLastScores] = useState<{ normal: number | null; random: number | null }>({ normal: null, random: null });
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   // Load persistence
   useEffect(() => {
     const savedNotes = localStorage.getItem(LOCAL_STORAGE_KEY_NOTES);
     const savedWrong = localStorage.getItem(LOCAL_STORAGE_KEY_WRONG);
     const savedData = localStorage.getItem(LOCAL_STORAGE_KEY_DATA);
+    const savedHistory = localStorage.getItem(LOCAL_STORAGE_KEY_HISTORY);
 
     if (savedNotes) setNotesState(JSON.parse(savedNotes));
     if (savedWrong) setWrongCounts(JSON.parse(savedWrong));
+    if (savedHistory) setHistory(JSON.parse(savedHistory));
     if (savedData) {
         const parsed = JSON.parse(savedData);
         setQuestionsState(parsed);
@@ -120,6 +126,8 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
+    const finalScore = parseFloat(((correctCount / 200) * 10).toFixed(2));
+
     setLastScores(prev => ({
       ...prev,
       [activeMode]: correctCount
@@ -135,6 +143,24 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     setWrongCounts(newWrongCounts);
     localStorage.setItem(LOCAL_STORAGE_KEY_WRONG, JSON.stringify(newWrongCounts));
+
+    // Save History
+    const durationSpent = currentState.initialDuration && currentState.timeRemaining !== null 
+        ? currentState.initialDuration - currentState.timeRemaining 
+        : 0; // If no timer used, strictly speaking duration is unknown or 0 with current logic
+
+    const newHistoryEntry: HistoryEntry = {
+        timestamp: new Date().toLocaleString(),
+        mode: activeMode === 'normal' ? 'Normal' : 'Random',
+        score: finalScore,
+        duration: durationSpent
+    };
+
+    setHistory(prev => {
+        const updated = [newHistoryEntry, ...prev].slice(0, 10); // Keep last 10
+        localStorage.setItem(LOCAL_STORAGE_KEY_HISTORY, JSON.stringify(updated));
+        return updated;
+    });
 
     // Mark as submitted and freeze timer
     updateActiveState({
@@ -155,7 +181,9 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Setting timer also essentially resets the session for that mode
     updateActiveState({
         ...initialModeState,
-        timeRemaining: seconds
+        timeRemaining: seconds,
+        initialDuration: seconds,
+        isTimerPaused: false
     });
     // Also reset score for this mode
     if (activeMode === 'normal' || activeMode === 'random') {
@@ -170,13 +198,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [currentState.timeRemaining, currentState.isSubmitted, activeMode]);
 
   const tickTimer = useCallback(() => {
-    // We need to access the state directly in the callback to avoid stale closures if using generic `tickTimer` logic
-    // However, since we use `updateActiveState` with a callback, it handles the latest state.
-    
-    // BUT, we only want to tick if it's the *Active* mode that has the timer running.
-    // If we are viewing 'Guide' but 'Normal' has a timer, should it tick?
-    // For simplicity, we only tick the active mode's timer.
-    
     if (activeMode !== 'normal' && activeMode !== 'random') return;
 
     updateActiveState(prev => {
@@ -184,17 +205,16 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (prev.isTimerPaused || prev.isSubmitted) return {}; // Do not tick if paused or submitted
 
         if (prev.timeRemaining <= 1) {
-            // Trigger submit logic needs to be handled outside the reducer or carefully
-            // Since we can't call `submitQuiz` easily inside this state setter, we'll use an effect or just set submitted here
-            // To ensure consistency, we'll set time to 0 and submitted to true here
-            // But we miss the Score Calculation logic if we just set state.
-            // Better approach: decrement. If 0, useEffect in component triggers submit?
-            // Or just allow tick to 0.
             return { timeRemaining: 0 };
         }
         return { timeRemaining: prev.timeRemaining - 1 };
     });
   }, [activeMode]);
+
+  const clearHistory = useCallback(() => {
+      setHistory([]);
+      localStorage.removeItem(LOCAL_STORAGE_KEY_HISTORY);
+  }, []);
 
   // Handle auto-submit when timer hits 0
   useEffect(() => {
@@ -214,11 +234,13 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       shuffledOrder,
       activeMode,
       lastScores,
+      history,
       
       // Dynamic values from active state
       userAnswers: currentState.userAnswers,
       isSubmitted: currentState.isSubmitted,
       timeRemaining: currentState.timeRemaining,
+      initialDuration: currentState.initialDuration,
       isTimerPaused: currentState.isTimerPaused,
 
       setQuestions,
@@ -230,7 +252,8 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toggleTimerPause,
       tickTimer,
       randomizeQuestions,
-      setActiveMode
+      setActiveMode,
+      clearHistory
     }}>
       {children}
     </QuizContext.Provider>

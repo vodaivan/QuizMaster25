@@ -5,9 +5,10 @@ import QuizView from './components/QuizView';
 import InputView from './components/InputView';
 import ReviewView from './components/ReviewView';
 import GuideView from './components/GuideView';
+import HistoryView from './components/HistoryView';
 import ResultsModal from './components/ResultsModal';
 import Timer from './components/Timer';
-import { LayoutList, Shuffle, Edit3, BookOpen, HelpCircle } from 'lucide-react';
+import { LayoutList, Shuffle, Edit3, BookOpen, HelpCircle, History } from 'lucide-react';
 
 const QuizAppContent: React.FC = () => {
   const [showResults, setShowResults] = React.useState(false);
@@ -26,6 +27,7 @@ const QuizAppContent: React.FC = () => {
     { id: 'normal', label: 'Normal Quiz', icon: LayoutList },
     { id: 'random', label: 'Randomized', icon: Shuffle },
     { id: 'review', label: 'Review & Notes', icon: BookOpen },
+    { id: 'history', label: 'History', icon: History },
   ];
 
   return (
@@ -86,6 +88,7 @@ const QuizAppContent: React.FC = () => {
         {activeMode === 'normal' && <QuizView mode="normal" />}
         {activeMode === 'random' && <QuizView mode="random" />}
         {activeMode === 'review' && <ReviewView />}
+        {activeMode === 'history' && <HistoryView />}
       </main>
 
       <ResultsModal isOpen={showResults} onClose={() => setShowResults(false)} />

@@ -41,9 +41,8 @@ const QuizView: React.FC<Props> = ({ mode }) => {
   }, [isSubmitted]);
 
   const handleSubmit = () => {
-    if (window.confirm('Are you sure you want to submit the quiz for this section? This will lock your answers and show the final score.')) {
-        submitQuiz();
-    }
+    // Immediate submit without confirmation
+    submitQuiz();
   };
 
   if (questions.length === 0) {
