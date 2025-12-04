@@ -20,6 +20,17 @@ export interface HistoryEntry {
   duration: number; // seconds spent
 }
 
+// Settings Types
+export type FontFamily = 'sans' | 'serif' | 'mono';
+export type FontSize = 'small' | 'medium' | 'large';
+export type ColumnLayout = 'single' | 'double';
+
+export interface AppSettings {
+  fontFamily: FontFamily;
+  fontSize: FontSize;
+  layout: ColumnLayout;
+}
+
 export interface QuizModeState {
   userAnswers: Record<number, string>;
   isSubmitted: boolean;
@@ -30,7 +41,7 @@ export interface QuizModeState {
   // Navigation State
   currentSection: number;
   currentPage: number;
-  isPageChecked: boolean; // Moved to global state
+  isPageChecked: boolean;
 }
 
 export interface QuizState {
@@ -52,6 +63,9 @@ export interface QuizState {
   activeMode: QuizMode;
   lastScores: { normal: number | null; random: number | null };
   history: HistoryEntry[];
+  
+  // App Settings
+  settings: AppSettings;
 }
 
 export const SECTIONS = [1, 2, 3, 4];

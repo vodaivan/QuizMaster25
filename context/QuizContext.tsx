@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Question, QuizState, QuizMode, QuizModeState, HistoryEntry, QUESTIONS_PER_PAGE, QUESTIONS_PER_SECTION } from '../types';
+import { Question, QuizState, QuizMode, QuizModeState, HistoryEntry, AppSettings, QUESTIONS_PER_PAGE, QUESTIONS_PER_SECTION } from '../types';
 
 interface QuizContextType extends QuizState {
   setQuestions: (questions: Question[]) => void;
@@ -18,6 +18,9 @@ interface QuizContextType extends QuizState {
   setCurrentSection: (section: number) => void;
   setCurrentPage: (page: number) => void;
   togglePageCheck: (force?: boolean) => void;
+
+  // Settings
+  updateSettings: (newSettings: Partial<AppSettings>) => void;
 }
 
 const QuizContext = createContext<QuizContextType | undefined>(undefined);
@@ -26,6 +29,7 @@ const LOCAL_STORAGE_KEY_NOTES = 'quiz_notes';
 const LOCAL_STORAGE_KEY_WRONG = 'quiz_wrong_counts';
 const LOCAL_STORAGE_KEY_DATA = 'quiz_data';
 const LOCAL_STORAGE_KEY_HISTORY = 'quiz_history';
+const LOCAL_STORAGE_KEY_SETTINGS = 'quiz_settings';
 
 const initialModeState: QuizModeState = {
   userAnswers: {},
@@ -36,6 +40,12 @@ const initialModeState: QuizModeState = {
   currentSection: 1,
   currentPage: 1,
   isPageChecked: false,
+};
+
+const defaultSettings: AppSettings = {
+  fontFamily: 'sans',
+  fontSize: 'medium',
+  layout: 'single',
 };
 
 export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -51,6 +61,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeMode, setActiveModeState] = useState<QuizMode>('guide');
   const [lastScores, setLastScores] = useState<{ normal: number | null; random: number | null }>({ normal: null, random: null });
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [settings, setSettingsState] = useState<AppSettings>(defaultSettings);
 
   // Load persistence
   useEffect(() => {
@@ -58,10 +69,12 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const savedWrong = localStorage.getItem(LOCAL_STORAGE_KEY_WRONG);
     const savedData = localStorage.getItem(LOCAL_STORAGE_KEY_DATA);
     const savedHistory = localStorage.getItem(LOCAL_STORAGE_KEY_HISTORY);
+    const savedSettings = localStorage.getItem(LOCAL_STORAGE_KEY_SETTINGS);
 
     if (savedNotes) setNotesState(JSON.parse(savedNotes));
     if (savedWrong) setWrongCounts(JSON.parse(savedWrong));
     if (savedHistory) setHistory(JSON.parse(savedHistory));
+    if (savedSettings) setSettingsState({ ...defaultSettings, ...JSON.parse(savedSettings) });
     if (savedData) {
         const parsed = JSON.parse(savedData);
         setQuestionsState(parsed);
@@ -241,6 +254,15 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem(LOCAL_STORAGE_KEY_HISTORY);
   }, []);
 
+  // Settings Handler
+  const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
+    setSettingsState(prev => {
+        const updated = { ...prev, ...newSettings };
+        localStorage.setItem(LOCAL_STORAGE_KEY_SETTINGS, JSON.stringify(updated));
+        return updated;
+    });
+  }, []);
+
   // Handle auto-submit when timer hits 0
   useEffect(() => {
       if ((activeMode === 'normal' || activeMode === 'random') && 
@@ -260,6 +282,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeMode,
       lastScores,
       history,
+      settings,
       
       // Dynamic values from active state
       userAnswers: currentState.userAnswers,
@@ -284,7 +307,8 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearHistory,
       setCurrentSection,
       setCurrentPage,
-      togglePageCheck
+      togglePageCheck,
+      updateSettings
     }}>
       {children}
     </QuizContext.Provider>

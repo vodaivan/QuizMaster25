@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { QuizProvider, useQuiz } from './context/QuizContext';
 import { QuizMode } from './types';
 import QuizView from './components/QuizView';
@@ -8,11 +8,14 @@ import GuideView from './components/GuideView';
 import HistoryView from './components/HistoryView';
 import ResultsModal from './components/ResultsModal';
 import Timer from './components/Timer';
-import { LayoutList, Shuffle, Edit3, BookOpen, HelpCircle, History, Eye, EyeOff, Send, RotateCcw } from 'lucide-react';
+import { LayoutList, Shuffle, Edit3, BookOpen, HelpCircle, History, Eye, EyeOff, Send, RotateCcw, Settings, X, Type, Columns } from 'lucide-react';
 
 const QuizAppContent: React.FC = () => {
   const [showResults, setShowResults] = React.useState(false);
-  const { isSubmitted, questions, activeMode, setActiveMode, isPageChecked, togglePageCheck, submitQuiz, resetQuiz } = useQuiz();
+  const [showSettings, setShowSettings] = React.useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
+  const { isSubmitted, questions, activeMode, setActiveMode, isPageChecked, togglePageCheck, submitQuiz, resetQuiz, settings, updateSettings } = useQuiz();
 
   // Auto show results when submission happens (e.g. via timer)
   useEffect(() => {
@@ -20,6 +23,21 @@ const QuizAppContent: React.FC = () => {
       setShowResults(true);
     }
   }, [isSubmitted]);
+
+  // Click outside to close settings
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+            setShowSettings(false);
+        }
+    };
+    if (showSettings) {
+        document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSettings]);
 
   const tabs = [
     { id: 'guide', label: 'Guide', icon: HelpCircle },
@@ -32,8 +50,21 @@ const QuizAppContent: React.FC = () => {
 
   const showQuizControls = (activeMode === 'normal' || activeMode === 'random') && questions.length > 0;
 
+  // Global Styles based on Settings
+  const fontClass = {
+      sans: 'font-sans',
+      serif: 'font-serif',
+      mono: 'font-mono'
+  }[settings.fontFamily];
+
+  const sizeClass = {
+      small: 'text-sm',
+      medium: 'text-base',
+      large: 'text-lg'
+  }[settings.fontSize];
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
+    <div className={`min-h-screen flex flex-col bg-gray-50 ${fontClass} ${sizeClass}`}>
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between relative">
@@ -101,9 +132,112 @@ const QuizAppContent: React.FC = () => {
              )}
           </div>
 
-          {/* Mobile Only Controls (Right aligned) */}
-          <div className="flex md:hidden items-center gap-2">
+          {/* Mobile Only Controls (Right aligned next to settings) */}
+          <div className="flex md:hidden items-center gap-2 z-10 mr-10">
              {showQuizControls && <Timer />}
+          </div>
+
+          {/* Right: Settings Button */}
+          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20" ref={settingsRef}>
+             <button
+                onClick={() => setShowSettings(!showSettings)}
+                className={`p-2 rounded-lg transition-colors ${showSettings ? 'bg-gray-200 text-gray-800' : 'bg-white text-gray-600 hover:bg-gray-100'}`}
+                title="Settings"
+             >
+                 <Settings size={22} />
+             </button>
+
+             {/* Settings Panel */}
+             {showSettings && (
+                 <div className="absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-xl border border-gray-200 p-4 animate-in slide-in-from-top-2">
+                     <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+                         <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                             <Settings size={16} /> Appearance
+                         </h3>
+                     </div>
+
+                     <div className="space-y-4">
+                         {/* Font Family */}
+                         <div>
+                             <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block flex items-center gap-1">
+                                <Type size={12} /> Font Style
+                             </label>
+                             <div className="grid grid-cols-3 gap-2">
+                                 {['sans', 'serif', 'mono'].map((f) => (
+                                     <button
+                                        key={f}
+                                        onClick={() => updateSettings({ fontFamily: f as any })}
+                                        className={`px-2 py-1.5 text-xs rounded border capitalize transition-colors ${
+                                            settings.fontFamily === f 
+                                            ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold' 
+                                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                        }`}
+                                     >
+                                         {f}
+                                     </button>
+                                 ))}
+                             </div>
+                         </div>
+
+                         {/* Font Size */}
+                         <div>
+                             <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">
+                                Font Size
+                             </label>
+                             <div className="grid grid-cols-3 gap-2">
+                                 {['small', 'medium', 'large'].map((s) => (
+                                     <button
+                                        key={s}
+                                        onClick={() => updateSettings({ fontSize: s as any })}
+                                        className={`px-2 py-1.5 text-xs rounded border capitalize transition-colors ${
+                                            settings.fontSize === s 
+                                            ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold' 
+                                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                        }`}
+                                     >
+                                         {s}
+                                     </button>
+                                 ))}
+                             </div>
+                         </div>
+
+                         {/* Layout Mode */}
+                         <div>
+                             <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block flex items-center gap-1">
+                                <Columns size={12} /> Quiz Layout
+                             </label>
+                             <p className="text-[10px] text-gray-400 mb-2">Applies to Normal & Random tabs only.</p>
+                             <div className="grid grid-cols-2 gap-2">
+                                 <button
+                                    onClick={() => updateSettings({ layout: 'single' })}
+                                    className={`px-2 py-2 text-xs rounded border transition-colors flex flex-col items-center gap-1 ${
+                                        settings.layout === 'single'
+                                        ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold'
+                                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                    }`}
+                                 >
+                                     <div className="w-4 h-4 border border-current rounded-sm"></div>
+                                     One Column
+                                 </button>
+                                 <button
+                                    onClick={() => updateSettings({ layout: 'double' })}
+                                    className={`px-2 py-2 text-xs rounded border transition-colors flex flex-col items-center gap-1 ${
+                                        settings.layout === 'double'
+                                        ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold'
+                                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                    }`}
+                                 >
+                                     <div className="flex gap-0.5">
+                                        <div className="w-2 h-4 border border-current rounded-sm"></div>
+                                        <div className="w-2 h-4 border border-current rounded-sm"></div>
+                                     </div>
+                                     Two Columns
+                                 </button>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+             )}
           </div>
         </div>
         

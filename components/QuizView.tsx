@@ -21,7 +21,8 @@ const QuizView: React.FC<Props> = ({ mode }) => {
       setCurrentSection,
       setCurrentPage,
       isPageChecked,
-      togglePageCheck
+      togglePageCheck,
+      settings
   } = useQuiz();
 
   // Keyboard shortcut for Quick Check (/)
@@ -187,6 +188,13 @@ const QuizView: React.FC<Props> = ({ mode }) => {
     </div>
   );
 
+  // Layout Logic:
+  // If settings.layout === 'double', use CSS grid with 2 columns on medium screens+
+  // Otherwise use flex-col (single column)
+  const gridClass = settings.layout === 'double' 
+    ? 'grid grid-cols-1 md:grid-cols-2 gap-6' 
+    : 'flex flex-col space-y-6';
+
   return (
     <div className="max-w-4xl mx-auto pb-20">
       {/* Top Control Bar */}
@@ -213,7 +221,7 @@ const QuizView: React.FC<Props> = ({ mode }) => {
       </div>
 
       {/* Question List */}
-      <div className="space-y-6">
+      <div className={gridClass}>
         {currentQuestions.map((q, idx) => {
             // Calculate global index for display
             // Section offset + Page offset + index + 1
