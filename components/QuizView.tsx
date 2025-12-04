@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useQuiz } from '../context/QuizContext';
 import QuestionCard from './QuestionCard';
 import { SECTIONS, QUESTIONS_PER_SECTION, QUESTIONS_PER_PAGE } from '../types';
-import { RefreshCw, ArrowLeft, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { RefreshCw, ArrowLeft, ArrowRight, Eye, EyeOff, Send } from 'lucide-react';
 
 interface Props {
   mode: 'normal' | 'random';
 }
 
 const QuizView: React.FC<Props> = ({ mode }) => {
-  const { questions, shuffledOrder, randomizeQuestions, isSubmitted, userAnswers } = useQuiz();
+  const { questions, shuffledOrder, randomizeQuestions, isSubmitted, userAnswers, submitQuiz } = useQuiz();
   const [activeSection, setActiveSection] = useState(1);
   const [activePage, setActivePage] = useState(1); // 1-5
   const [isPageChecked, setIsPageChecked] = useState(false); // Local state for Quick Check
@@ -39,6 +39,12 @@ const QuizView: React.FC<Props> = ({ mode }) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isSubmitted]);
+
+  const handleSubmit = () => {
+    if (window.confirm('Are you sure you want to submit the quiz for this section? This will lock your answers and show the final score.')) {
+        submitQuiz();
+    }
+  };
 
   if (questions.length === 0) {
     return (
@@ -148,8 +154,9 @@ const QuizView: React.FC<Props> = ({ mode }) => {
         {/* Additional Tools Bar */}
         <div className="flex flex-wrap justify-between items-center gap-3 mt-4 px-1">
              <div className="flex items-center gap-3">
-                {!isSubmitted && (
+                {!isSubmitted ? (
                     <>
+                        {/* Quick Check Button */}
                         {!isPageChecked ? (
                             <button
                                 onClick={() => setIsPageChecked(true)}
@@ -172,7 +179,19 @@ const QuizView: React.FC<Props> = ({ mode }) => {
                                 </span>
                             </div>
                         )}
+                        
+                        {/* Local Submit Button */}
+                         <button
+                            onClick={handleSubmit}
+                            className="flex items-center gap-2 text-sm text-white bg-green-600 hover:bg-green-700 px-3 py-2 rounded-md transition-colors font-medium shadow-sm"
+                        >
+                            <Send size={16} /> Submit
+                        </button>
                     </>
+                ) : (
+                    <div className="text-green-700 font-bold bg-green-50 px-3 py-2 rounded border border-green-200 text-sm">
+                        Quiz Submitted
+                    </div>
                 )}
              </div>
 

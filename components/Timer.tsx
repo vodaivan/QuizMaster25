@@ -8,13 +8,16 @@ const Timer: React.FC = () => {
 
   useEffect(() => {
     let interval: any;
-    if (timeRemaining !== null && timeRemaining > 0 && !isSubmitted) {
+    // Tick if time exists, is greater than 0, not submitted, and not paused.
+    // Note: QuizContext 'tickTimer' handles the pause/submit checks internally too,
+    // but we check here to avoid unnecessary intervals.
+    if (timeRemaining !== null && timeRemaining > 0 && !isSubmitted && !isTimerPaused) {
       interval = setInterval(() => {
         tickTimer();
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [timeRemaining, isSubmitted, tickTimer]);
+  }, [timeRemaining, isSubmitted, isTimerPaused, tickTimer]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -27,8 +30,8 @@ const Timer: React.FC = () => {
     setShowMenu(false);
   };
 
-  const handleEndTest = () => {
-    if (window.confirm("Are you sure you want to end the test and reset everything? This will clear all progress.")) {
+  const handleReset = () => {
+    if (window.confirm("Are you sure you want to reset this quiz? All progress for this mode will be lost.")) {
       resetQuiz();
     }
   };
@@ -44,7 +47,7 @@ const Timer: React.FC = () => {
           }}
           disabled={timeRemaining !== null}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold transition-colors ${
-            timeRemaining !== null && timeRemaining < 60 ? 'bg-red-100 text-red-600' : 'bg-white text-gray-700 hover:bg-gray-100'
+            timeRemaining !== null && timeRemaining < 60 && !isSubmitted ? 'bg-red-100 text-red-600' : 'bg-white text-gray-700 hover:bg-gray-100'
           } border border-gray-300 shadow-sm disabled:cursor-default`}
         >
           <Clock size={20} />
@@ -68,7 +71,6 @@ const Timer: React.FC = () => {
       </div>
 
       {timeRemaining !== null && !isSubmitted && (
-        <>
           <button
             onClick={toggleTimerPause}
             className="p-2 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
@@ -76,16 +78,18 @@ const Timer: React.FC = () => {
           >
             {isTimerPaused ? <Play size={20} /> : <Pause size={20} />}
           </button>
-          
+      )}
+
+      {/* Show Reset button if timer is running OR if quiz is submitted */}
+      {(timeRemaining !== null || isSubmitted) && (
           <button
-             onClick={handleEndTest}
-             className="flex items-center gap-1 px-3 py-2 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 font-medium text-sm"
-             title="End Test & Reset"
+             onClick={handleReset}
+             className="flex items-center gap-1 px-3 py-2 rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors font-medium text-sm"
+             title="Reset Quiz"
           >
             <RotateCcw size={16} />
-            <span className="hidden md:inline">End Test</span>
+            <span className="hidden md:inline">Reset</span>
           </button>
-        </>
       )}
     </div>
   );

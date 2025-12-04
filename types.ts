@@ -13,15 +13,24 @@ export interface Question {
 
 export type QuizMode = 'normal' | 'random' | 'input' | 'review' | 'guide';
 
+export interface QuizModeState {
+  userAnswers: Record<number, string>;
+  isSubmitted: boolean;
+  timeRemaining: number | null;
+  isTimerPaused: boolean;
+}
+
 export interface QuizState {
   questions: Question[];
-  userAnswers: Record<number, string>; // QuestionID -> OptionID
+  // These properties now reflect the *active* mode
+  userAnswers: Record<number, string>; 
   isSubmitted: boolean;
+  timeRemaining: number | null; 
+  isTimerPaused: boolean;
+  
   notes: Record<number, string>;
   wrongCounts: Record<number, number>;
-  timeRemaining: number | null; // in seconds
-  isTimerPaused: boolean;
-  shuffledOrder: number[]; // Array of Question IDs in random order
+  shuffledOrder: number[]; 
   activeMode: QuizMode;
   lastScores: { normal: number | null; random: number | null };
 }

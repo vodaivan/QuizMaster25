@@ -7,11 +7,11 @@ import ReviewView from './components/ReviewView';
 import GuideView from './components/GuideView';
 import ResultsModal from './components/ResultsModal';
 import Timer from './components/Timer';
-import { LayoutList, Shuffle, Edit3, BookOpen, Send, HelpCircle } from 'lucide-react';
+import { LayoutList, Shuffle, Edit3, BookOpen, HelpCircle } from 'lucide-react';
 
 const QuizAppContent: React.FC = () => {
   const [showResults, setShowResults] = React.useState(false);
-  const { isSubmitted, submitQuiz, questions, activeMode, setActiveMode } = useQuiz();
+  const { isSubmitted, questions, activeMode, setActiveMode } = useQuiz();
 
   // Auto show results when submission happens (e.g. via timer)
   useEffect(() => {
@@ -19,12 +19,6 @@ const QuizAppContent: React.FC = () => {
       setShowResults(true);
     }
   }, [isSubmitted]);
-
-  const handleSubmit = () => {
-    if (window.confirm('Are you sure you want to submit the quiz?')) {
-      submitQuiz();
-    }
-  };
 
   const tabs = [
     { id: 'guide', label: 'Guide', icon: HelpCircle },
@@ -48,15 +42,6 @@ const QuizAppContent: React.FC = () => {
              {(activeMode === 'normal' || activeMode === 'random') && questions.length > 0 && (
                  <>
                     <Timer />
-                    {!isSubmitted && (
-                        <button
-                        onClick={handleSubmit}
-                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-transform active:scale-95"
-                        >
-                        <Send size={18} />
-                        <span className="hidden md:inline">Submit Quiz</span>
-                        </button>
-                    )}
                     {isSubmitted && (
                         <button
                             onClick={() => setShowResults(true)}
