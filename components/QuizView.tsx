@@ -25,23 +25,45 @@ const QuizView: React.FC<Props> = ({ mode }) => {
       settings
   } = useQuiz();
 
-  // Keyboard shortcut for Quick Check (/)
+  // Keyboard shortcuts for Navigation and Actions
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === '/') {
-            e.preventDefault(); // Prevent input in other fields if any
+        // Ignore shortcuts if user is typing in a note or input
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') return;
+
+        const key = e.key.toLowerCase();
+
+        // Quick Check (/)
+        if (key === '/') {
+            e.preventDefault(); 
             if (!isSubmitted) {
                 togglePageCheck();
             }
+        }
+
+        // Page Navigation (Comma / Period)
+        if (key === ',') {
+            setCurrentPage(Math.max(1, currentPage - 1));
+        }
+        if (key === '.') {
+            setCurrentPage(Math.min(5, currentPage + 1));
+        }
+
+        // Section Navigation (Brackets)
+        if (key === '[') {
+             setCurrentSection(Math.max(1, currentSection - 1));
+        }
+        if (key === ']') {
+             setCurrentSection(Math.min(4, currentSection + 1));
         }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isSubmitted, togglePageCheck]);
+  }, [isSubmitted, togglePageCheck, currentPage, currentSection, setCurrentPage, setCurrentSection]);
 
   const handleSubmit = () => {
-    // Immediate submit without confirmation
     submitQuiz();
   };
 
@@ -117,6 +139,7 @@ const QuizView: React.FC<Props> = ({ mode }) => {
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 className="p-2 rounded-md hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed bg-white border border-gray-200"
+                title="Shortcut: comma (,)"
             >
                 <ArrowLeft size={18} />
             </button>
@@ -137,6 +160,7 @@ const QuizView: React.FC<Props> = ({ mode }) => {
                 disabled={currentPage === 5}
                 onClick={() => setCurrentPage(Math.min(5, currentPage + 1))}
                 className="p-2 rounded-md hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed bg-white border border-gray-200"
+                title="Shortcut: period (.)"
             >
                 <ArrowRight size={18} />
             </button>
@@ -188,9 +212,7 @@ const QuizView: React.FC<Props> = ({ mode }) => {
     </div>
   );
 
-  // Layout Logic:
-  // If settings.layout === 'double', use CSS grid with 2 columns on medium screens+
-  // Otherwise use flex-col (single column)
+  // Layout Logic
   const gridClass = settings.layout === 'double' 
     ? 'grid grid-cols-1 md:grid-cols-2 gap-6' 
     : 'flex flex-col space-y-6';
@@ -223,8 +245,6 @@ const QuizView: React.FC<Props> = ({ mode }) => {
       {/* Question List */}
       <div className={gridClass}>
         {currentQuestions.map((q, idx) => {
-            // Calculate global index for display
-            // Section offset + Page offset + index + 1
             const globalIndex = ((currentSection - 1) * 50) + ((currentPage - 1) * 10) + idx + 1;
             return (
                 <QuestionCard 

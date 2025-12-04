@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Book, Keyboard, Layout, PlayCircle, Edit3, Shuffle, BookOpen, History, Info, HelpCircle, Eye, Send } from 'lucide-react';
+import { Book, Keyboard, Layout, PlayCircle, Edit3, Shuffle, BookOpen, History, Info, HelpCircle, Eye, Send, Command } from 'lucide-react';
 
 const GuideView: React.FC = () => {
   const [lang, setLang] = useState<'en' | 'vi'>('en');
@@ -36,7 +36,10 @@ const GuideView: React.FC = () => {
         export: "Export Notes: In the Review tab, click 'Save Notes to TXT' to download your study notes.",
         reset: "Reset: Clears all progress in the current mode to start fresh.",
 
-        shortcuts: "Keyboard Shortcuts",
+        shortcuts: "5. Keyboard Shortcuts (Complete List)",
+        sc_intro: "Using keyboard shortcuts significantly improves your speed in Normal and Random modes. Navigation and answering can be done entirely without the mouse.",
+        sc_ans_title: "Answer Selection",
+        sc_nav_title: "Navigation & Actions",
     },
     vi: {
         title: "Hướng Dẫn Sử Dụng & Cẩm Nang",
@@ -69,11 +72,27 @@ const GuideView: React.FC = () => {
         export: "Xuất Ghi chú: Tại tab Review, nhấn 'Save Notes to TXT' để tải file ghi chú về máy.",
         reset: "Reset (Làm lại): Xóa toàn bộ tiến độ hiện tại để làm lại từ đầu.",
 
-        shortcuts: "Phím Tắt Bàn Phím",
+        shortcuts: "5. Phím Tắt Bàn Phím (Đầy Đủ)",
+        sc_intro: "Sử dụng phím tắt giúp tăng tốc độ làm bài đáng kể trong chế độ Thường và Ngẫu nhiên. Bạn có thể điều hướng và trả lời hoàn toàn không cần chuột.",
+        sc_ans_title: "Chọn Đáp Án",
+        sc_nav_title: "Điều Hướng & Thao Tác",
     }
   };
 
   const t = content[lang];
+
+  const ShortcutRow = ({ keys, desc }: { keys: string[], desc: string }) => (
+      <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+          <span className="text-gray-700">{desc}</span>
+          <div className="flex gap-1">
+              {keys.map((k, i) => (
+                  <kbd key={i} className="bg-gray-100 px-2 py-1 rounded border border-gray-300 font-mono text-xs shadow-sm text-gray-800 font-bold min-w-[1.5rem] text-center">
+                      {k}
+                  </kbd>
+              ))}
+          </div>
+      </div>
+  );
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-sm border border-gray-200">
@@ -193,54 +212,40 @@ const GuideView: React.FC = () => {
           </div>
         </section>
 
-        {/* Section 4: Tools */}
-        <section>
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
-                <HelpCircle className="text-orange-500" size={20} />
-                {t.sec4}
-            </h3>
-            <ul className="grid md:grid-cols-2 gap-3 text-sm text-gray-700">
-                <li className="bg-orange-50 p-3 rounded border border-orange-100">{t.timer}</li>
-                <li className="bg-orange-50 p-3 rounded border border-orange-100">{t.notes}</li>
-                <li className="bg-orange-50 p-3 rounded border border-orange-100">{t.export}</li>
-                <li className="bg-orange-50 p-3 rounded border border-orange-100">{t.reset}</li>
-            </ul>
-        </section>
-
         {/* Shortcuts */}
         <section>
           <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
-            <Keyboard className="text-gray-600" size={20} />
+            <Command className="text-gray-600" size={20} />
             {t.shortcuts}
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-             <div className="bg-gray-50 p-3 rounded border border-gray-200 text-center">
-                 <kbd className="bg-white border border-gray-300 rounded px-2 py-1 font-mono text-xs shadow-sm block w-max mx-auto mb-1">/</kbd>
-                 <span className="text-gray-500 text-xs">Quick Check</span>
+          <p className="text-sm text-gray-600 mb-4">{t.sc_intro}</p>
+          
+          <div className="grid md:grid-cols-2 gap-8 text-sm">
+             <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                 <h4 className="font-bold text-gray-800 mb-3 border-b border-gray-200 pb-2 flex items-center gap-2">
+                     <Edit3 size={16} /> {t.sc_ans_title}
+                 </h4>
+                 <div className="space-y-1">
+                     <ShortcutRow keys={['1', 'A', 'Z']} desc="Select Answer A" />
+                     <ShortcutRow keys={['2', 'B', 'X']} desc="Select Answer B" />
+                     <ShortcutRow keys={['3', 'C']} desc="Select Answer C" />
+                     <ShortcutRow keys={['4', 'D', 'V']} desc="Select Answer D" />
+                 </div>
              </div>
-             <div className="bg-gray-50 p-3 rounded border border-gray-200 text-center">
-                 <kbd className="bg-white border border-gray-300 rounded px-2 py-1 font-mono text-xs shadow-sm block w-max mx-auto mb-1">Space</kbd>
-                 <span className="text-gray-500 text-xs">Scroll Down</span>
-             </div>
-             <div className="bg-gray-50 p-3 rounded border border-gray-200 text-center">
-                 <kbd className="bg-white border border-gray-300 rounded px-2 py-1 font-mono text-xs shadow-sm block w-max mx-auto mb-1">Tab</kbd>
-                 <span className="text-gray-500 text-xs">Next Question</span>
-             </div>
-             <div className="bg-gray-50 p-3 rounded border border-gray-200 text-center">
-                 <kbd className="bg-white border border-gray-300 rounded px-2 py-1 font-mono text-xs shadow-sm block w-max mx-auto mb-1">1 / A / Z</kbd>
-                 <span className="text-gray-500 text-xs">Option A</span>
-             </div>
-             <div className="bg-gray-50 p-3 rounded border border-gray-200 text-center">
-                 <kbd className="bg-white border border-gray-300 rounded px-2 py-1 font-mono text-xs shadow-sm block w-max mx-auto mb-1">2 / B / X</kbd>
-                 <span className="text-gray-500 text-xs">Option B</span>
-             </div>
-             <div className="bg-gray-50 p-3 rounded border border-gray-200 text-center">
-                 <kbd className="bg-white border border-gray-300 rounded px-2 py-1 font-mono text-xs shadow-sm block w-max mx-auto mb-1">3 / C</kbd>
-                 <span className="text-gray-500 text-xs">Option C</span>
-             </div>
-             <div className="bg-gray-50 p-3 rounded border border-gray-200 text-center">
-                 <kbd className="bg-white border border-gray-300 rounded px-2 py-1 font-mono text-xs shadow-sm block w-max mx-auto mb-1">4 / D / V</kbd>
-                 <span className="text-gray-500 text-xs">Option D</span>
+
+             <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                 <h4 className="font-bold text-gray-800 mb-3 border-b border-gray-200 pb-2 flex items-center gap-2">
+                     <Keyboard size={16} /> {t.sc_nav_title}
+                 </h4>
+                 <div className="space-y-1">
+                     <ShortcutRow keys={['/']} desc="Toggle Quick Check" />
+                     <ShortcutRow keys={['Space']} desc="Scroll Down" />
+                     <ShortcutRow keys={['Tab']} desc="Next Question Focus" />
+                     <ShortcutRow keys={[',']} desc="Previous Page" />
+                     <ShortcutRow keys={['.']} desc="Next Page" />
+                     <ShortcutRow keys={['[']} desc="Previous Section" />
+                     <ShortcutRow keys={[']']} desc="Next Section" />
+                 </div>
              </div>
           </div>
         </section>
