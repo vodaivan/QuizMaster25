@@ -28,11 +28,34 @@ const QuizView: React.FC<Props> = ({ mode }) => {
   // Keyboard shortcuts for Navigation and Actions
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-        // Ignore shortcuts if user is typing in a note or input
         const target = e.target as HTMLElement;
-        if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') return;
+        
+        // Ignore shortcuts if user is typing in a note or input
+        if (target.tagName === 'TEXTAREA' || (target.tagName === 'INPUT' && target.getAttribute('type') !== 'radio')) return;
 
         const key = e.key.toLowerCase();
+
+        // Spacebar: Focus Next Question (Looping)
+        if (e.key === ' ') {
+            // Do not prevent default if user is clicking a button with space
+            if (target.tagName !== 'BUTTON' && target.tagName !== 'A' && target.getAttribute('role') !== 'button') {
+                e.preventDefault(); // Stop scrolling
+
+                const cards = Array.from(document.querySelectorAll('[data-question-id]')) as HTMLElement[];
+                if (cards.length > 0) {
+                    const currentIndex = cards.indexOf(document.activeElement as HTMLElement);
+                    
+                    // Loop back to 0 if at end, or start at 0 if nothing focused
+                    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % cards.length;
+                    
+                    const nextCard = cards[nextIndex];
+                    if (nextCard) {
+                        nextCard.focus();
+                        nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            }
+        }
 
         // Quick Check (/)
         if (key === '/') {

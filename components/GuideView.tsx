@@ -239,7 +239,7 @@ const GuideView: React.FC = () => {
                  </h4>
                  <div className="space-y-1">
                      <ShortcutRow keys={['/']} desc="Toggle Quick Check" />
-                     <ShortcutRow keys={['Space']} desc="Scroll Down" />
+                     <ShortcutRow keys={['Space']} desc="Jump to Next Question" />
                      <ShortcutRow keys={['Tab']} desc="Next Question Focus" />
                      <ShortcutRow keys={[',']} desc="Previous Page" />
                      <ShortcutRow keys={['.']} desc="Next Page" />
