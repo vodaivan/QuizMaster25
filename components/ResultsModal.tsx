@@ -17,23 +17,34 @@ const ResultsModal: React.FC<Props> = ({ isOpen, onClose }) => {
   // Calculate scores per section
   const data = SECTIONS.map(section => {
     const sectionQuestions = questions.filter(q => q.section === section);
+    const totalInSection = sectionQuestions.length;
+    
     let correct = 0;
     sectionQuestions.forEach(q => {
       if (userAnswers[q.id] === q.correctOptionId) correct++;
     });
     
-    // Formula: (Correct / 50) * 10
-    const score = (correct / QUESTIONS_PER_SECTION) * 10;
+    // Formula: (Correct / Total in Section) * 10
+    const score = totalInSection > 0 ? (correct / totalInSection) * 10 : 0;
+    
     return {
       name: `Section ${section}`,
       score: parseFloat(score.toFixed(1)),
       correct,
-      total: QUESTIONS_PER_SECTION
+      total: totalInSection
     };
   });
 
-  const totalCorrect = data.reduce((acc, curr) => acc + curr.correct, 0);
-  const totalScore = parseFloat(((totalCorrect / 200) * 10).toFixed(2));
+  const totalQuestions = questions.length;
+  // Calculate total correct directly from all questions to be safe
+  let totalCorrect = 0;
+  questions.forEach(q => {
+    if (userAnswers[q.id] === q.correctOptionId) {
+      totalCorrect++;
+    }
+  });
+
+  const totalScore = totalQuestions > 0 ? parseFloat(((totalCorrect / totalQuestions) * 10).toFixed(2)) : 0;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -49,7 +60,7 @@ const ResultsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <div className="text-center mb-8">
             <p className="text-gray-500 font-medium uppercase tracking-wider text-sm">Overall Score</p>
             <div className="text-5xl font-extrabold text-blue-600 mt-2">{totalScore} <span className="text-2xl text-gray-400">/ 10</span></div>
-            <p className="text-gray-600 mt-2">Correct Answers: {totalCorrect} / 200</p>
+            <p className="text-gray-600 mt-2">Correct Answers: {totalCorrect} / {totalQuestions}</p>
             
             <div className="mt-4 grid grid-cols-2 gap-4 max-w-sm mx-auto text-sm">
                 <div className="bg-blue-50 p-2 rounded border border-blue-100">
@@ -88,6 +99,7 @@ const ResultsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                      <span className={`text-xl font-bold ${sec.score >= 5 ? 'text-green-600' : 'text-red-500'}`}>
                          {sec.score} / 10
                      </span>
+                     <span className="text-xs text-gray-400 mt-1">({sec.correct}/{sec.total})</span>
                  </div>
              ))}
           </div>

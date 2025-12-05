@@ -188,7 +188,11 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    const finalScore = parseFloat(((correctCount / 200) * 10).toFixed(2));
+    const totalQuestions = questions.length;
+    // Calculate final score based on actual total questions, not hardcoded 200
+    const finalScore = totalQuestions > 0 
+        ? parseFloat(((correctCount / totalQuestions) * 10).toFixed(2)) 
+        : 0;
 
     setLastScores(prev => ({
       ...prev,
@@ -325,33 +329,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [pinnedQuestions, togglePinQuestion]);
 
   const clearAllReview = useCallback(() => {
-    // Logic: Identify all currently reviewable questions and dismiss them
-    // Note: We don't wipe wrong counts or notes from DB, just hide them from the view
-    // as per "Removes from Review list". 
-    // However, usually "Clear All" in a review context implies a reset.
-    // Let's populate dismissed with all currently "wrong" questions.
-    
-    // Actually, simpler: Dismiss everything that is currently "wrongCount > 0".
-    // Notes usually stick around? 
-    // The prompt says "clear all questions in the review list".
-    
-    // Strategy: Reset wrongCounts to 0 and clear notes? Or just dismiss?
-    // "Delete" usually implies removing the status that makes it appear.
-    
-    setWrongCounts({});
-    localStorage.removeItem(LOCAL_STORAGE_KEY_WRONG);
-    
-    // Notes are precious, maybe don't delete them unless explicit?
-    // But if a question is in review ONLY because of a note, removing it means deleting the note?
-    // Let's assume clear all review clears the "wrong" history. 
-    // If we want to truly clear the list, we should probably clear notes too or dismiss them.
-    // Let's take a safe approach: Dismiss all questions.
-    
-    // But getting "all questions" is hard inside this callback without depending on 'questions' state.
-    // Instead, let's just wipe the persistent wrong counts and let the UI refresh.
-    // And for notes? 
-    // Let's assume "Clear Review List" resets the 'Review' tab state.
-    
     setWrongCounts({});
     localStorage.setItem(LOCAL_STORAGE_KEY_WRONG, '{}');
     
