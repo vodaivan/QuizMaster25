@@ -3,6 +3,38 @@ import { useQuiz } from '../context/QuizContext';
 import { Search as SearchIcon, AlertCircle, HelpCircle, ListChecks, X } from 'lucide-react';
 import { Question } from '../types';
 
+// Helper component to highlight matched keywords
+const HighlightText = ({ text, query }: { text: string; query: string }) => {
+  if (!query.trim()) return <>{text}</>;
+
+  try {
+    const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rawWords = query.trim().split(/\s+/).filter(w => w.length > 0);
+    
+    if (rawWords.length === 0) return <>{text}</>;
+
+    const escapedWords = rawWords.map(escapeRegExp);
+    const regex = new RegExp(`(${escapedWords.join('|')})`, 'gi');
+    const parts = text.split(regex);
+
+    return (
+      <>
+        {parts.map((part, i) => {
+           // Check if this part matches any of the query words case-insensitively
+           const isMatch = rawWords.some(w => w.toLowerCase() === part.toLowerCase());
+           return isMatch ? (
+             <span key={i} className="bg-yellow-300 text-gray-900 rounded-sm px-0.5 shadow-sm">{part}</span>
+           ) : (
+             <span key={i}>{part}</span>
+           );
+        })}
+      </>
+    );
+  } catch (e) {
+    return <>{text}</>;
+  }
+};
+
 const SearchView: React.FC = () => {
   const { questions } = useQuiz();
   const [query, setQuery] = useState('');
@@ -68,10 +100,14 @@ const SearchView: React.FC = () => {
         <div className="flex justify-between items-start mb-2">
             <h3 className="text-lg font-medium text-gray-900 leading-relaxed">
                 <span className="font-bold text-blue-600 mr-2">Q{q.id}.</span>
-                {q.text}
+                {searchType === 'question' ? (
+                    <HighlightText text={q.text} query={query} />
+                ) : (
+                    q.text
+                )}
             </h3>
             {searchType === 'question' && (
-               <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded font-bold uppercase tracking-wide">
+               <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded font-bold uppercase tracking-wide flex-shrink-0 ml-2">
                    Question Match
                </span>
             )}
