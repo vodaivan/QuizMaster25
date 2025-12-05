@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuiz } from '../context/QuizContext';
-import { Search as SearchIcon, AlertCircle, HelpCircle, ListChecks } from 'lucide-react';
+import { Search as SearchIcon, AlertCircle, HelpCircle, ListChecks, X } from 'lucide-react';
 import { Question } from '../types';
 
 const SearchView: React.FC = () => {
@@ -16,19 +16,21 @@ const SearchView: React.FC = () => {
 
     const calculateScore = (text: string) => {
         let s = 0;
+        const lowerText = text.toLowerCase();
+
         // Exact match
-        if (text === lowerQuery) {
+        if (lowerText === lowerQuery) {
             s = 100;
         } 
         // Phrase match (contains the full query string)
-        else if (text.includes(lowerQuery)) {
+        else if (lowerText.includes(lowerQuery)) {
             s = 80;
         } 
         // Word match
         else {
             let matchedWords = 0;
             queryWords.forEach(word => {
-                if (text.includes(word)) {
+                if (lowerText.includes(word)) {
                     matchedWords++;
                 }
             });
@@ -46,10 +48,10 @@ const SearchView: React.FC = () => {
         let score = 0;
 
         if (searchType === 'question') {
-            score = calculateScore(q.text.toLowerCase());
+            score = calculateScore(q.text);
         } else {
             // Search in options
-            const optionScores = q.options.map(opt => calculateScore(opt.text.toLowerCase()));
+            const optionScores = q.options.map(opt => calculateScore(opt.text));
             // Take the best match found in any option
             score = Math.max(...optionScores);
         }
@@ -101,12 +103,22 @@ const SearchView: React.FC = () => {
         <div className="relative mb-6">
             <input 
                 type="text" 
-                className="w-full p-4 pl-12 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full p-4 pl-12 pr-12 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
                 placeholder={searchType === 'question' ? "Search in questions..." : "Search in answers..."}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
             />
             <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={24} />
+            
+            {query && (
+                <button 
+                    onClick={() => setQuery('')}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                    title="Clear search"
+                >
+                    <X size={20} />
+                </button>
+            )}
         </div>
 
         {/* Sub-Tabs */}
